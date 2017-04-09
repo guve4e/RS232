@@ -2,17 +2,20 @@
 #include <string>
 #include <termios.h>
 
+#define DLL_PUBLIC __attribute__ ((visibility ("default")))
+#define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+
 namespace RS232
 {
     class I_RS232
     {
     public:
-        virtual void send(std::string) = 0;
-        virtual void receive() = 0;
+        DLL_PUBLIC  virtual void send(std::string) = 0;
+        DLL_PUBLIC virtual void receive() = 0;
         virtual ~I_RS232() = default;
     };
 
-    class C_RS232 : public I_RS232
+    DLL_LOCAL class C_RS232 : public I_RS232
     {
     public:
         C_RS232(std::string name);
@@ -24,7 +27,7 @@ namespace RS232
     private: // member functions
         ssize_t send(int, void*, size_t);
 
-    private:
+    private: // member attributes
         int m_fileDescriptor;
         std::string deviceName;
         struct termios m_oldTio;
@@ -34,7 +37,7 @@ namespace RS232
     class R323Factory
     {
     public:
-        I_RS232* R323(std::string);
+        DLL_PUBLIC I_RS232* R323(std::string);
     };
 }
 
