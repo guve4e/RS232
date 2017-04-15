@@ -1,17 +1,12 @@
 
 #include <fcntl.h>
-#include <strings.h>
+#include <string>
 #include <cstring>
 #include <unistd.h>
 #include "C_RS232.h"
 
 #define BAUDRATE B9600
 
-
-#define FALSE 0
-#define TRUE 1
-
-volatile int STOP=FALSE;
 
 namespace RS232
 {
@@ -20,29 +15,21 @@ namespace RS232
      * Opens a device and sets it up
      * @param deviceName - the name of the device to open
      */
-    C_RS232::C_RS232(std::string deviceName) {
+    C_RS232::C_RS232(std::string port) {
 
         // set device name
-        this->deviceName = deviceName;
+        this->deviceName = port;
 
-        // Open device for reading and writing and not as controlling tt
-        // because we don't want to get killed if linenoise sends CTRL-C.
-
-        m_fileDescriptor = open(deviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-        if (m_fileDescriptor < 0) {
-            // Log it here
-
-            // make an exception class
-            // with code and message
-            char *s = strerror(errno);
-            std::cout << s << " \n";
-
-            throw -1;
+        // open port
+        m_fileDescriptor = open(port.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+        if (m_fileDescriptor < 0)
+        {
+            throw RS232Exception("open");
         }
 
-        std::cout<< deviceName << " opened\n";
-        // General configuration
-        //struct termios tty;
+        std::cout<< port << " opened\n";
+
+        // conf
         struct termios config;
         memset(&config, 0, sizeof(config));
         tcgetattr(m_fileDescriptor, &config);
@@ -58,18 +45,12 @@ namespace RS232
         // Timeouts configuration
         config.c_cc[VTIME] = 1;
         config.c_cc[VMIN] = 0;
-        //fcntl(handle, F_SETFL, FNDELAY);
+
         // Validate configuration
         if (tcsetattr(m_fileDescriptor, TCSANOW, &config) < 0) {
             close(m_fileDescriptor);
             // Log it here
-
-            // make an exception class
-            // with code and message
-            char *s = strerror(errno);
-            std::cout << s << " \n";
-
-            throw -1;
+            throw new RS232Exception("Unable to set attributes");
         }
 
         sleep(2); // make the arduino ready
@@ -151,9 +132,43 @@ namespace RS232
     /*
      * Factory
      */
-    I_RS232* R323Factory::R323(std::string device)
+    auto RS232Factory::RS232(std::string port)->std::unique_ptr<I_RS232>
     {
-        return new C_RS232(device);
+        return std::make_unique<C_RS232>(port);
+    }
+
+    /*
+     * RS232Exception Constructor
+     */
+    RS232Exception::RS232Exception(std::string msg) noexcept
+            : std::runtime_error( msg ), m_message(msg), m_errno("")
+    {
+        (void)getErrno();
+    }
+
+    /*
+     * Gets Info from Environmental Variable
+     * Errno and stores it in the m_errno member
+     */
+    void RS232Exception::getErrno() noexcept
+    {
+        // get value from errno
+        char *s = strerror(errno);
+        if (s != nullptr)
+        {
+            std::string str(s);
+            this->m_errno = str;
+        }
+    }
+
+    /*
+     * String Representation of the Exception
+     */
+    void RS232Exception::getMessage() const noexcept
+    {
+        std::cerr << "Message: " <<  this->m_message << std::endl;
+        std::cerr << "Errno : " << this->m_errno << std::endl;
+        std::cerr << this->what();
     }
 }
 

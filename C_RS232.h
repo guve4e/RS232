@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <memory>
 #include <termios.h>
 
 #define DLL_PUBLIC __attribute__ ((visibility ("default")))
@@ -18,7 +19,7 @@ namespace RS232
     DLL_LOCAL class C_RS232 : public I_RS232
     {
     public:
-        C_RS232(std::string name);
+        C_RS232(std::string port);
         ~C_RS232();
         void send(std::string) override;
         void receive() override;
@@ -32,12 +33,25 @@ namespace RS232
         std::string deviceName;
         struct termios m_oldTio;
         struct termios m_newTio;
+        int m_boudRate;
+        
     };
 
-    class R323Factory
+    class RS232Factory
     {
     public:
-        DLL_PUBLIC I_RS232* R323(std::string);
+        DLL_PUBLIC auto RS232(std::string)->std::unique_ptr<I_RS232>;
+    };
+
+    DLL_PUBLIC class RS232Exception : public std::runtime_error
+    {
+    private:
+        std::string m_message;
+        std::string m_errno;
+    public:
+        RS232Exception(std::string) noexcept ;
+        void getErrno() noexcept ;
+        void getMessage() const noexcept;
     };
 }
 
