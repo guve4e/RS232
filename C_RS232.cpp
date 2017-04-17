@@ -1,34 +1,59 @@
-
 #include <fcntl.h>
 #include <string>
 #include <cstring>
 #include <unistd.h>
+#include <map>
 #include "C_RS232.h"
-
-#define BAUDRATE B9600
-
 
 namespace RS232
 {
+    std::map<int, int> boudRates = {
+            {0, B0},
+            {50, B50},
+            {75, B75},
+            {110, B110},
+            {134, B134},
+            {150, B150},
+            {200, B200},
+            {300, B300},
+            {600, B600},
+            {1200, B1200},
+            {1800, B1800},
+            {2400, B2400},
+            {4800, B4800},
+            {9600, B9600},
+            {19200, B19200},
+            {3840, B38400},
+            {57600, B57600},
+            {115200,B115200},
+            {230400, B230400}
+    };
+
     /*
      * Constructor
      * Opens a device and sets it up
-     * @param deviceName - the name of the device to open
+     * @param m_port - the name of the device to open
      */
-    C_RS232::C_RS232(std::string port) {
-
+    C_RS232::C_RS232(std::string port)
+    {
         // set device name
-        this->deviceName = port;
+        this->m_port = port;
+        // set default boud rate
+        this->m_boudRate = B9600;
 
-        // open port
-        m_fileDescriptor = open(port.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-        if (m_fileDescriptor < 0)
-        {
-            throw RS232Exception("open");
-        }
-
+        // open port and set
+        // file descriptor
+        (void)openPort();
         std::cout<< port << " opened\n";
+        // set up
+        (void)setUp();
+    }
 
+    /*
+     * Set UP
+     */
+    void C_RS232::setUp() throw()
+    {
         // conf
         struct termios config;
         memset(&config, 0, sizeof(config));
@@ -40,8 +65,8 @@ namespace RS232
         config.c_cflag |= CLOCAL | CREAD | CS8;
         config.c_lflag &= ~(ICANON | ISIG | ECHO);
         //int flag = _BaudFlag(baudrate);
-        cfsetospeed(&config, BAUDRATE);
-        cfsetispeed(&config, BAUDRATE);
+        cfsetospeed(&config, this->m_boudRate);
+        cfsetispeed(&config, this->m_boudRate);
         // Timeouts configuration
         config.c_cc[VTIME] = 1;
         config.c_cc[VMIN] = 0;
@@ -54,7 +79,22 @@ namespace RS232
         }
 
         sleep(2); // make the arduino ready
+
     }
+
+    /*
+     * Open
+     */
+    void C_RS232::openPort()
+    {
+        // open m_port
+        m_fileDescriptor = open(m_port.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+        if (m_fileDescriptor < 0)
+        {
+            throw RS232Exception("open");
+        }
+    }
+
 
     /*
      * Reads data from device
@@ -111,15 +151,15 @@ namespace RS232
     }
 
     /*
-     * Closes the open port
+     * Closes the open m_port
      * Called from destructor
      */
     void C_RS232::closePort() {
-        // restore the old port settings
+        // restore the old m_port settings
         tcsetattr(m_fileDescriptor,TCSANOW,&m_oldTio);
         tcdrain(m_fileDescriptor);
         close(m_fileDescriptor);
-        std::cout << this->deviceName << " closed\n";
+        std::cout << this->m_port << " closed\n";
     }
 
     /*
@@ -127,6 +167,22 @@ namespace RS232
      */
     C_RS232::~C_RS232() {
         closePort();
+    }
+
+    /*
+     * Set Baud Rate
+     * Default B9600
+     */
+    void C_RS232::setBaudRate(int rate) {
+        // check invariant
+        auto search = boudRates.find(rate);
+        if(search == boudRates.end()) {
+            throw new RS232Exception(std::to_string(rate)
+                                     + " is not valid Boud Rate");
+        }
+
+        // set baoud rate
+        this->m_boudRate = boudRates.at(rate);
     }
 
     /*

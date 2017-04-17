@@ -24,13 +24,16 @@ namespace RS232
         void send(std::string) override;
         void receive() override;
         void closePort();
+        void setBaudRate(int);
 
     private: // member functions
         ssize_t send(int, void*, size_t);
+        void setUp() throw();
+        void openPort();
 
     private: // member attributes
         int m_fileDescriptor;
-        std::string deviceName;
+        std::string m_port;
         struct termios m_oldTio;
         struct termios m_newTio;
         int m_boudRate;
