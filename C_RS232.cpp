@@ -51,6 +51,7 @@ namespace RS232
 
     /**
      * Set UP
+     *
      * @throws RS232Exception
      */
     void C_RS232::setUp()
@@ -83,7 +84,9 @@ namespace RS232
     }
 
     /**
-     * Open
+     * Open port
+     *
+     * @throws RS232Exception
      */
     void C_RS232::openPort()
     {
@@ -97,10 +100,12 @@ namespace RS232
 
     /**
      * Robustly Write N bytes (unbuffered)
+     * On Error sets errno
+     *
      * @param fd - file descriptor
      * @param usrbuf - void pointer (pointer to anything)
      * @param n - the size of the thing that usrbuf points to
-     * @return the size of the object sent
+     * @return number of bytes transferred if OK, 0 on EOF, −1 on error
      */
     ssize_t C_RS232::send(int fd, void* usrbuf, size_t n)
     {
@@ -122,12 +127,13 @@ namespace RS232
     }
 
     /**
-     * Receive
+     * Receive (unbuffered)
+     * On Error sets errno
      *
-     * @param fd
-     * @param usrbuf
-     * @param n
-     * @return
+     * @param fd - file descriptor
+     * @param usrbuf - void pointer (pointer to anything)
+     * @param n - the size of the thing that usrbuf points t
+     * @return number of bytes read if OK, 0 on EOF, −1 on error
      */
     ssize_t C_RS232::receive(int fd, void *usrbuf, size_t n)
     {
@@ -157,14 +163,14 @@ namespace RS232
      */
     void C_RS232::receive() {
 
-        char * a = new char[1]();
+        char * a = new char;
 
         sleep(5);
 
         ssize_t result = receive(this->m_fileDescriptor,a,1);
         if (result < 0) throw new RS232Exception("Receive ");
 
-        std::cout << "Received :" << a[0]  << "\n";
+        std::cout << "Received :" << a  << "\n";
     }
 
     /**
