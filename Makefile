@@ -1,7 +1,7 @@
 TARGETS=C_RS232.o main.o rs232
 
 CC = g++
-CFLAGS = -Wall -g -O0
+CFLAGS = -Wall -g -O0 -Wno-attributes
 GCC_VERSION = -std=c++1y 
 
 all: $(TARGETS)

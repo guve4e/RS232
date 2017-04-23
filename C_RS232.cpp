@@ -191,14 +191,13 @@ namespace RS232
     void C_RS232::send(std::string data) {
 
         // convert std::string to char array
-        char buffer[data.size()+1];
-        strcpy(buffer, data.c_str());
+        std::unique_ptr<char> buffer = stringToCharArray(data);
 
         // get the size of the buffer
-        ssize_t n = strlen(buffer);
+        ssize_t n = strlen(buffer.get());
 
         // send
-        ssize_t res = send(m_fileDescriptor, buffer, n);
+        ssize_t res = send(m_fileDescriptor, buffer.get(), n);
         if (res != n) {
             throw new RS232Exception("Send string");
         }
@@ -238,6 +237,20 @@ namespace RS232
 
         // set baoud rate
         this->m_boudRate = boudRates.at(rate);
+    }
+
+    /**
+     * Converts std::string to char array
+     *
+     * @param data
+     * @return pointer to char array
+     */
+    auto C_RS232::stringToCharArray(std::string data) -> std::unique_ptr<char>
+    {
+        // allocate enough space for the array
+        auto buffer = std::make_unique<char>(data.size() + 1);
+        strcpy(buffer.get(), data.c_str());
+        return buffer;
     }
 
     /*

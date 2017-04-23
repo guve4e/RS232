@@ -31,6 +31,7 @@ namespace RS232
     private: // member functions
         ssize_t send(int, void*, size_t);
         ssize_t receive(int, void*, size_t);
+        inline auto stringToCharArray(std::string) -> std::unique_ptr<char>;
         void setUp();
         void openPort();
 
