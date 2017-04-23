@@ -12,6 +12,7 @@ namespace RS232
     {
     public:
         DLL_PUBLIC  virtual void send(std::string) = 0;
+        DLL_PUBLIC  virtual void send(uint8_t) = 0;
         DLL_PUBLIC virtual void receive() = 0;
         virtual ~I_RS232() = default;
     };
@@ -22,13 +23,14 @@ namespace RS232
         C_RS232(std::string port);
         ~C_RS232();
         void send(std::string) override;
+        void send(uint8_t) override;
         void receive() override;
         void closePort();
         void setBaudRate(int);
 
     private: // member functions
         ssize_t send(int, void*, size_t);
-        void setUp() throw();
+        void setUp();
         void openPort();
 
     private: // member attributes

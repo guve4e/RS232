@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 
         std::unique_ptr<RS232::I_RS232> port = factory->RS232("/dev/ttyUSB0");
 
-        port->send("A");
+        port->send('c');
 
     }
     catch(RS232::RS232Exception& e)

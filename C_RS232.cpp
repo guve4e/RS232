@@ -29,7 +29,7 @@ namespace RS232
             {230400, B230400}
     };
 
-    /*
+    /**
      * Constructor
      * Opens a device and sets it up
      * @param m_port - the name of the device to open
@@ -49,10 +49,11 @@ namespace RS232
         (void)setUp();
     }
 
-    /*
+    /**
      * Set UP
+     * @throws RS232Exception
      */
-    void C_RS232::setUp() throw()
+    void C_RS232::setUp()
     {
         // conf
         struct termios config;
@@ -79,10 +80,9 @@ namespace RS232
         }
 
         sleep(2); // make the arduino ready
-
     }
 
-    /*
+    /**
      * Open
      */
     void C_RS232::openPort()
@@ -95,8 +95,7 @@ namespace RS232
         }
     }
 
-
-    /*
+    /**
      * Reads data from device
      */
     void C_RS232::receive() {
@@ -105,6 +104,10 @@ namespace RS232
 
     /**
      * Robustly Write N bytes (unbuffered)
+     * @param fd - file descriptor
+     * @param usrbuf - void pointer (pointer to anything)
+     * @param n - the size of the thing that usrbuf points to
+     * @return the size of the object sent
      */
     ssize_t C_RS232::send(int fd, void* usrbuf, size_t n)
     {
@@ -125,7 +128,24 @@ namespace RS232
         return n;
     }
 
-    /*
+    /**
+     * Send uint8_t
+     * @param data
+     */
+    void C_RS232::send(uint8_t data) {
+
+        int n = sizeof(data);
+        uint8_t* buffer = &data;
+
+        // send
+        ssize_t res = send(m_fileDescriptor, buffer, n);
+        if (res != n) {
+            throw new RS232Exception("Send int");
+        }
+        std::cout << "Sent :" << res << " bytes\n";
+    }
+
+    /**
      * Sends string
      * @param data - string to send
      */
@@ -139,13 +159,9 @@ namespace RS232
         ssize_t n = strlen(buffer);
 
         // send
-        int res = send(m_fileDescriptor, buffer, n);
+        ssize_t res = send(m_fileDescriptor, buffer, n);
         if (res != n) {
-             //make an exception class
-            // with code and message
-            char* s = strerror(errno);
-            std::cout << s << " \n";
-            throw -1;
+            throw new RS232Exception("Send string");
         }
         std::cout << "Sent :" << res << " bytes\n";
     }
