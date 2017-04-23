@@ -96,13 +96,6 @@ namespace RS232
     }
 
     /**
-     * Reads data from device
-     */
-    void C_RS232::receive() {
-
-    }
-
-    /**
      * Robustly Write N bytes (unbuffered)
      * @param fd - file descriptor
      * @param usrbuf - void pointer (pointer to anything)
@@ -113,7 +106,7 @@ namespace RS232
     {
         size_t nleft = n;
         ssize_t nwritten;
-        char* bufp = (char*)usrbuf;
+        char *bufp = static_cast<char*>(usrbuf);
 
         while (nleft > 0) {
             if ((nwritten = write(fd, bufp, nleft)) <= 0) {
@@ -126,6 +119,52 @@ namespace RS232
             bufp += nwritten;
         }
         return n;
+    }
+
+    /**
+     * Receive
+     *
+     * @param fd
+     * @param usrbuf
+     * @param n
+     * @return
+     */
+    ssize_t C_RS232::receive(int fd, void *usrbuf, size_t n)
+    {
+        size_t nleft = n;
+        ssize_t nread;
+
+        char *bufp = static_cast<char*>(usrbuf);
+
+        while (nleft > 0) {
+            if ((nread = read(fd, bufp, nleft)) < 0) {
+                if (errno == EINTR) /* Interrupted by sig handler return */
+                    nread = 0; /* and call read() again */
+                else
+                    return -1; /* errno set by read() */
+            } else if (nread == 0)
+                break; /* EOF */
+
+            nleft -= nread;
+            bufp += nread;
+        }
+
+        return (n - nleft); /* Return >= 0 */
+    }
+
+    /**
+     * Reads data from device
+     */
+    void C_RS232::receive() {
+
+        char * a = new char[1]();
+
+        sleep(5);
+
+        ssize_t result = receive(this->m_fileDescriptor,a,1);
+        if (result < 0) throw new RS232Exception("Receive ");
+
+        std::cout << "Received :" << a[0]  << "\n";
     }
 
     /**
